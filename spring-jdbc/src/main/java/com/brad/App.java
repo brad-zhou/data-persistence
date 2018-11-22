@@ -2,18 +2,26 @@ package com.brad;
 
 import com.brad.domain.Department;
 import com.brad.domain.Employee;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Hello world!
  */
+@Service("app")
 public class App {
     private static final String MYSQL_JDBC_DRIVER = "com.mysql.jdbc.Driver";
     private static final String URL = "jdbc:mysql://169.254.34.161:3306/mydb?useUnicode=true&characterEncoding=UTF-8";
@@ -67,7 +75,87 @@ public class App {
         return department;
     }
 
-    public static void main(String[] args) {
-        System.out.println("Hello World!");
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    /**
+     * 基于Druid连接池
+     *
+     * @param department
+     * @return
+     */
+    @Transactional
+    public Long saveDepartment(final Department department) {
+        if (null == department) {
+            throw new RuntimeException("");
+        }
+
+        // jdbcTemplate需要注入, 不能这样获取, 不然事务不起作用 （可能不在同一个Spring容器内）
+//        ApplicationContext ctx = new ClassPathXmlApplicationContext("applicationContext.xml");
+//        final JdbcTemplate jdbcTemplate = (JdbcTemplate) ctx.getBean("jdbcTemplate");
+        Long department_id;
+
+        // 通过jdbcTemplate返回主键
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbcTemplate.update(new PreparedStatementCreator() {
+            @Override
+            public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
+                PreparedStatement pstmt = con.prepareStatement(SQL_SAVE_DEPARTMENT, Statement.RETURN_GENERATED_KEYS);
+                pstmt.setString(1, department.getName());
+                return pstmt;
+            }
+        }, keyHolder);
+        department_id = keyHolder.getKey().longValue();
+
+        Set<Employee> employees = department.getEmployees();
+        if (null == employees || employees.isEmpty()) {
+            return department_id;
+        }
+
+        List<Object[]> batchArgs = new ArrayList<>();
+        for (Employee employee : employees) {
+            batchArgs.add(new Object[]{employee.getName(), employee.getSalary(), department_id});
+        }
+
+        jdbcTemplate.batchUpdate(SQL_SAVE_EMPLOYEE, batchArgs);
+
+//        int a = 1 / 0;
+
+        return department_id;
+    }
+
+    @Transactional
+    public void updateDepartment(Department department) {
+        if (null == department) {
+            throw new RuntimeException("");
+        }
+
+        jdbcTemplate.update(SQL_UPDATE_DEPARTMENT, department.getName(), department.getId());
+
+        Set<Employee> employees = department.getEmployees();
+        if (null == employees || employees.isEmpty()) {
+            return;
+        }
+
+        List<Object[]> batchArgs = new ArrayList<>();
+        for (Employee employee : employees) {
+            batchArgs.add(new Object[]{employee.getName(), employee.getSalary(), employee.getId()});
+        }
+
+        jdbcTemplate.batchUpdate(SQL_UPDATE_EMPLOYEE, batchArgs);
+//        int i = 1 / 0;
+    }
+
+    @Transactional
+    public void removeDepartment(Long id) {
+        if (null == id || id <= 0) {
+            throw new RuntimeException("");
+        }
+
+        jdbcTemplate.update(SQL_DELETE_EMPLOYEE, id);
+
+        jdbcTemplate.update(SQL_DELETE_DEPARTMENT, id);
+
+//        int i = 1 / 0;
     }
 }
