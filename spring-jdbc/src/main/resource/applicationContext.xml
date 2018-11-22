@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans.xsd
+           http://www.springframework.org/schema/context
+           http://www.springframework.org/schema/context/spring-context.xsd
+           http://www.springframework.org/schema/tx
+           http://www.springframework.org/schema/tx/spring-tx.xsd">
+    <!--读取jdbc.properties文件到Spring上下文, 通过SpEL获取文件中的变量值-->
+    <context:property-placeholder location="classpath:jdbc.properties"/>
+
+    <!-- 开启注解扫描 -->
+    <context:component-scan base-package="com.brad"/>
+
+    <!--配置数据源: 使用Alibaba连接池-->
+    <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource" destroy-method="close">
+        <property name="driverClassName" value="${driverClassName}"/>
+        <property name="url" value="${url}"/>
+        <property name="username" value="${user}"/>
+        <property name="password" value="${password}"/>
+        <!-- 连接池启动时的初始值 -->
+        <property name="initialSize" value="${initialSize}"/>
+        <!-- 连接池的最大值 -->
+        <property name="maxActive" value="${maxActive}"/>
+        <!-- 最大空闲值.当经过一个高峰时间后，连接池可以慢慢将已经用不到的连接慢慢释放一部分，一直减少到maxIdle为止 -->
+        <property name="maxIdle" value="${maxIdle}"/>
+        <!--  最小空闲值.当空闲的连接数少于阀值时，连接池就会预申请去一些连接，以免洪峰来时来不及申请 -->
+        <property name="minIdle" value="${minIdle}"/>
+    </bean>
+
+    <!-- 使用Spring提供的JdbcTemplate操作数据库 -->
+    <bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+        <!-- 使用构造器注入数据源 -->
+        <constructor-arg name="dataSource" ref="dataSource"></constructor-arg>
+    </bean>
+
+    <!-- 添加事务管理器组件DataSourceTransactionManager -->
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <!-- 使用set方法注入数据源 -->
+        <property name="dataSource" ref="dataSource"></property>
+    </bean>
+    <!-- 开启基于注解声明式事务
+         注意配置transaction-manager属性，它引用了我们事务管理组件对象，这里要和事务管理器组件id一致
+         默认是transactionManager -->
+    <tx:annotation-driven transaction-manager="transactionManager"/>
+</beans>
