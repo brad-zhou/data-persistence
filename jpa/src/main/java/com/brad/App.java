@@ -1,12 +1,19 @@
 package com.brad;
 
 import com.brad.domain.Department;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.*;
 
 /**
  * Hello world!
  */
+@EnableTransactionManagement
+@ComponentScan
+@Component
 public class App {
     public Department getDepartmentById(Long id) {
         // 1.获得Factory
@@ -51,5 +58,30 @@ public class App {
         factory.close();
 
         return department.getId();
+    }
+
+    @PersistenceContext
+    private EntityManager entityManager;
+
+    @Transactional
+    public void updateDepartment(Department department) {
+        if (null == department) {
+            throw new RuntimeException("");
+        }
+
+        entityManager.merge(department);
+//        int i = 1 / 0;
+    }
+
+    @Transactional
+    public void removeDepartment(Long id) {
+        if (null == id || id <= 0) {
+            throw new RuntimeException("");
+        }
+
+        Department department = entityManager.find(Department.class, id);
+        entityManager.remove(department);
+
+//        int i = 1 / 0;
     }
 }
