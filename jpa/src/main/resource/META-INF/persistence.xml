@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence version="2.0"
+             xmlns="http://java.sun.com/xml/ns/persistence" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_2_0.xsd">
+    <!--创建应用程序管理类型的实体管理器工厂是通过JPA PersistenceProvider 类的自动检测机制（根据JPA的 Java SE启动），它会自动扫描META-INF/persistence.xml文件;
+        应用程序管理类型的实体管理器工厂的绝大部分配置信息来源于persistence.xml配置文件,这个文件必须位于类路径下的META-INF目录下;
+        persistence.xml列出了一个或多个的持久化类以及一些其他的配置如数据源和基于XML的配置文件.
+    -->
+
+    <persistence-unit name="JPA" transaction-type="RESOURCE_LOCAL">
+        <!-- 配置jpa ORM产品 -->
+        <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
+        <!-- 添加对应的持久化类 -->
+        <class>com.brad.domain.Employee</class>
+        <class>com.brad.domain.Department</class>
+        <properties>
+            <!-- jpa中连接数据库 -->
+            <property name="javax.persistence.jdbc.driver" value="com.mysql.jdbc.Driver"/>
+            <property name="javax.persistence.jdbc.url" value="jdbc:mysql://169.254.34.161:3306/mydb?characterEncoding=UTF-8"/>
+            <property name="javax.persistence.jdbc.user" value="root"/>
+            <property name="javax.persistence.jdbc.password" value="123456"></property>
+
+            <!-- jpa中配置hibernate基本属性 -->
+            <property name="hibernate.show_sql" value="true"/>
+            <property name="hibernate.format_sql" value="true"/>
+        </properties>
+
+    </persistence-unit>
+</persistence>
